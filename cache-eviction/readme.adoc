@@ -35,18 +35,18 @@ If the data is read from client cache, no network request is sent to Lustre file
 
 === Environment and architecture
 
-The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the Region table link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notifiction to a Lambda endpoint which invokes the AWS Lambda function. 
+The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notifiction to a Lambda endpoint which invokes the AWS Lambda function. 
 
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
 
 •	Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
 •	Generates the userdata script for the EC2 instance that will:
-	•	Install python3, boto3 boto, multiprocessing_logging packages.
-	•	Install the lustre 2.10 client on the EC2 instance.
-	•	Mount the FSx for Lustre file system under /fsx mount path.
-	•	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
-	•	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
+	••	Install python3, boto3 boto, multiprocessing_logging packages.
+	••	Install the lustre 2.10 client on the EC2 instance.
+	••	Mount the FSx for Lustre file system under /fsx mount path.
+	••	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
+	••	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
 •	Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
 
 
@@ -56,8 +56,8 @@ The cache eviction script executes the following steps on the temporary EC2 inst
 •	Validates these least recently accessed files identified in the previous step are in a hsm state suitable for releasing the space. Files in one of these hsm states will be ignored: [" ", "dirty","released","lost","non-release","non-archive"]
 •	Identifies the size and access time of these least recently accessed files.
 •	Determines space used by these least recently accessed files. If total space used by these files:
-		•	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
-		•	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
+		••	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
+		••	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
 •	Initiates a hsm release to release space used by these files.
 •	Terminates the EC2 instance and sends a SNS email notification.
 
@@ -74,9 +74,9 @@ image::cache-eviction-architecture.png[align="left", width=600]
 Below is a list of AWS resources created when launching the stack using the CloudFormation template.
 
 •	CloudFormation stack
-•	Lambda functions
-•	Lambda permissions
-•	IAM role
+•	Lambda functions (1. Lambda Function to lookup AMI info and 2. Lambda function to trigger Cache Eviction on your FSx file system)
+•	Lambda IAM roles
+•	EC2 instance IAM role
 •	CloudWatch Alarm
 •	SNS topics
 
@@ -89,7 +89,7 @@ Below is a list of AWS resources created when the CloudWatch Alarm is triggered.
 === Prerequisites
 An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template. 
 
-The file system should be mounted on all compute instances without the *noatimo* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
+The file system should be mounted on all compute instances without the *noatimeo* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
 
 
 === CloudFormation template inputs
@@ -168,32 +168,37 @@ a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/h
 |===
 
 
-==== Options scripts (not needed if launching the stack using the table links above)
+==== Optional scripts (not needed if launching the stack using the table links above)
 
 You can download the CloudFormation Template, the Lambda deployment package and the cache eviction python script from using the links provided below and customize it to meet your requirements:
 
 The CloudFormation template.
 
-link:<https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 The Lambda function deployment package.
 
-link:<https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
 
 The python script that runs on a temporary EC2 instance.
 
-link:<https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
 
 
 === Managing the Solution
 
-Once the CloudFormation Stack is sucecssfully depoyed you need to confirm subscription to Amazon SNS to receive email alerts. A email subscription format will look as shown below:
+Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. A email subscription format will look as shown below:
 
-You can check the deployed resources:
+You should see the following resources in your AWS mangagement console. These resources will include the CloudFormation Stack Name in the resource names:
 
-Check the CloudWatch Alarm to monitor Space on your FSx for Lustre file system
+•	CloudWatch Alarm to monitor Space on your FSx for Lustre file system
+•	Lambda function that will be triggered when file system capacity drops below the configured threshold
+•	Lambda IAM role
+•	EC2 Instance IAM role
+•	SNS topic
 
-Check the AWS Lambda function deployed
+
+If you need to adjust or change the threshold value for the CloudWatch Alarm after the stack was deployed, you can do so by going to the CloudWatch console. Select the Alarm -> Click on *Actions* -> *Edit*. Then edit the value under *Define the threshold value.*
 
 
 === Troubleshooting
