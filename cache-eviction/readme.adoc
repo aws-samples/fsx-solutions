@@ -23,10 +23,6 @@ Customers spin-up FSx for Lustre as a fast caching layer for processing large da
 When a new file system is created, FSx creates the meta-data structure for all objects in the linked S3 bucket or prefix. Data is lazy loaded upon first access from S3 bucket or prefix into the FSx file system. The free capacity on the file system will decrease as objects are read from linked S3 bucket,  new files written or existing files are modified. The cache eviction solution attempts evict sufficient number of files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
 
 
-=== Prerequisites
-An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template. 
-
-The file system should be mounted on all compute instances without the *noatimo* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
 
 === Understanding file access time updates on Lustre
 
@@ -36,31 +32,6 @@ If the data is read from client cache, no network request is sent to Lustre file
 
 *Note*: This is a very important behavior to take into consideration while deploying the Cache Eviction Solution. As atime updates are lazy, the Cache Eviction solution may not have the most recent atime for files that have been cached locally on clients. This can lead to some recently acessed files getting evicted FSx. The metadata is still present on FSx and data will be read back from linked S3 bucket or prefix upon next access.
 
-=== CloudFormation template inputs
-
-The CloudFormation template takes the following inputs:
-[cols="3,4"]
-|===
-| *Stack name*
-a| *_Enter_* - *Enter a Name for your stack*
-| *File system id*
-a| *_Enter_* - *Enter your file system id* Ex: fs-01234567900
-| *Directory path under root of FSx file system*
-a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
-| *Low-water-mark to start FSx Cache eviction*
-a| *_Enter_* - *<size in bytes>* Ex: 2400000000000 (for 2.4 TB)
-| *Low-water-mark to start FSx Cache eviction*
-a| *_Enter_* - *<size in bytes>* Ex: 3000000000000 (for 3.0 TB)
-| *Minimum age for least recently accessed files*
-a| *_Enter_* - *<minimum age of least recently accessed files to be evicted in days>* Ex: 1  (to evict files not accessed for more than 1 day)
-| *Email address*
-a| *_Enter_* - *<your email address to receive SNS notification>* 
-| *EC2 key pair*
-a| *_Select_* - *<Select your EC2 Keypair to be used for launching the temporary EC2 instance>*
-| *EC2 Instance security group id*
-a| *_Select_* - *<Select your security group id that will be used to launch the temporary EC2 instance>*
-|===
-
 
 === Environment and architecture
 
@@ -69,14 +40,14 @@ The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation templ
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
 
-. Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
-. Generates the userdata script for the EC2 instance that will:
-	. Install python3, boto3 boto, multiprocessing_logging packages.
-	. Install the lustre 2.10 client on the EC2 instance.
-	. Mount the FSx for Lustre file system under /fsx mount path.
-	. Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
-	. Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
-. Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
+•	Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
+•	Generates the userdata script for the EC2 instance that will:
+	•	Install python3, boto3 boto, multiprocessing_logging packages.
+	•	Install the lustre 2.10 client on the EC2 instance.
+	•	Mount the FSx for Lustre file system under /fsx mount path.
+	•	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
+	•	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
+•	Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
 
 
 The cache eviction script executes the following steps on the temporary EC2 instance that is launched:
@@ -85,8 +56,8 @@ The cache eviction script executes the following steps on the temporary EC2 inst
 •	Validates these least recently accessed files identified in the previous step are in a hsm state suitable for releasing the space. Files in one of these hsm states will be ignored: [" ", "dirty","released","lost","non-release","non-archive"]
 •	Identifies the size and access time of these least recently accessed files.
 •	Determines space used by these least recently accessed files. If total space used by these files:
-		. Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
-		. Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
+		•	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
+		•	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
 •	Initiates a hsm release to release space used by these files.
 •	Terminates the EC2 instance and sends a SNS email notification.
 
@@ -112,6 +83,39 @@ Below is a list of AWS resources created when launching the stack using the Clou
 Below is a list of AWS resources created when the CloudWatch Alarm is triggered.
 
 •	m5.2xlarge EC2 instance
+
+
+
+=== Prerequisites
+An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template. 
+
+The file system should be mounted on all compute instances without the *noatimo* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
+
+
+=== CloudFormation template inputs
+
+The CloudFormation template takes the following inputs:
+[cols="3,4"]
+|===
+| *Stack name*
+a| *_Enter_* - *Enter a Name for your stack*
+| *File system id*
+a| *_Enter_* - *Enter your file system id* Ex: fs-01234567900
+| *Directory path under root of FSx file system*
+a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
+| *Low-water-mark to start FSx Cache eviction*
+a| *_Enter_* - *<size in bytes>* Ex: 2400000000000 (for 2.4 TB)
+| *Low-water-mark to start FSx Cache eviction*
+a| *_Enter_* - *<size in bytes>* Ex: 3000000000000 (for 3.0 TB)
+| *Minimum age for least recently accessed files*
+a| *_Enter_* - *<minimum age of least recently accessed files to be evicted in days>* Ex: 1  (to evict files not accessed for more than 1 day)
+| *Email address*
+a| *_Enter_* - *<your email address to receive SNS notification>* 
+| *EC2 key pair*
+a| *_Select_* - *<Select your EC2 Keypair to be used for launching the temporary EC2 instance>*
+| *EC2 Instance security group id*
+a| *_Select_* - *<Select your security group id that will be used to launch the temporary EC2 instance>*
+|===
 
 
 === Launching the stack
