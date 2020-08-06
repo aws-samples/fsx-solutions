@@ -1,17 +1,12 @@
-## My Project
+## Collection of Amazon FSx Solutions
 
-TODO: Fill this README out!
+© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved. This sample code is made available under the MIT-0 license. See the LICENSE file.
 
-Be sure to:
+Errors or corrections, Contact 
+[kurdekar@amazon.com](mailto:kurdekar@amazon.com). 
+[darrylo@amazon.com](mailto:darrylo@amazon.com). 
 
-* Change the title in this README
-* Edit your repository description on GitHub
+## Index of Solutions
 
-## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
-
-## License
-
-This library is licensed under the MIT-0 License. See the LICENSE file.
 
