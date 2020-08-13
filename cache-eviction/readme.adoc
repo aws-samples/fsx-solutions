@@ -230,6 +230,7 @@ Logs from execution of the python script are stored under: /<FSx Mount Path>/Cac
 
 An example output from successful execution of the script is shown below:
 
+----
 24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting Cache Eviction process with input arguments: {'mountpath': '/fsx/', 'lwmfreecapacity': '200000000000', 'hwmfreecapacity': '500000000000', 'minage': '1', 'sns': 'arn:aws:sns:us-east-2:012345678920:FSxL-Cache-Evict-SNSTopicFSxLEmail-1ABCDEFGHIJK6', 'region': 'us-east-2'}
 
 24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting discovery of files not accessed for more than 1 day on FSx mount path /fsx/
@@ -252,7 +253,7 @@ An example output from successful execution of the script is shown below:
 
 24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Below is the full list of least recently accessed files on which hsm release was triggered:
 [' List of files']
-
+----
 
 === Deleting Resources
 All AWS resources created using the CloudFormation template can be removed by deleting the CloudFormation stack. Deleting the stack will not delete the FSx for Lustre file system.
