@@ -16,12 +16,17 @@ Errors or corrections? Contact kurdekar@amazon.com
 
 === Overview
 
-The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system and evicts (releases) space consumed by least recently accessed files, if the file system free capacity drops below the configured low-water-mark.
 
-Customers spin-up FSx for Lustre as a fast caching layer for processing large datasets located on Amazon S3. When working with large datasets customers do not need to spin-up a large file system equivalent to the size of their S3 dataset. Customers can create a smaller FSx file system that is ideal for their active workload and deploy the Cache Eviction solution to manage capacity. This can help customers save on FSx file system costs. 
+The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system. if the file system free capacity drops below the configured threshold (low-water-mark), the solution evicts (releases) space consumed by least recently accessed files on the FSx file system. 
 
-When a new file system is created, FSx creates the meta-data structure for all objects in the linked S3 bucket or prefix. Data is lazy loaded upon first access from S3 bucket or prefix into the FSx file system. The free capacity on the file system will decrease as objects are read from linked S3 bucket,  new files written or existing files are modified. The cache eviction solution attempts evict sufficient number of files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
+Many enterprises and other AWS customers often store their datasets and build their data lakes on Amazon S3. Since Amazon FSx for Lustre is deeply integrated with S3, customers can create a new FSx for Lustre file system linked to their S3 bucket in minutes. FSx for Lustre file systems transparently present S3 objects as files when linked to a S3 data repository. This enables customers to use FSx as a fast cache and process data faster using a high-performance, POSIX-complaint, and fully managed file system. After processing is complete, customers can write results back to the linked S3 data repository using the data repository task API, and release space consumed by files that are no longer needed for active processing. 
 
+When working with large datasets that span hundreds of TB's or PB's on S3, customers do not need to spin-up a FSx file system equivalent to the size of their S3 dataset. Customers can create a smaller FSx file system that is large enough to hold their active working dataset and deploy a Cache Eviction solution to manage capacity. This can help customers save on FSx file system costs. 
+
+When a new file system is created, FSx loads the metadata for all objects in the linked S3 bucket or prefix presenting them as files or directories. Data is lazy loaded upon first access from S3 bucket or prefix, into the file system. This allows customers to create a smaller file system while providing a complete view into all the file and directories from the linked S3 bucket. The free capacity on the file system will decrease as objects are lazy loaded into the file system, new files created or existing files are modified. Once the processing is complete, customers can perform hsm_release to release the space used by the current working data set. This will only release space used by the files while retaining the metadata on the file system. The data will be lazy loaded if the files are accessed again. This provides the flexibility to free up capcaity for any new data that needs to be imported for the next processing job.
+
+
+By deploying a cache eviction solution similar to the sample code provided here, customers can manage capacity on their FSx file system.  When the free capacity threshold is breached, the Cache Eviction Solution attempts to evict sufficient number of files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
 
 
 === Understanding file access time updates on Lustre
@@ -40,26 +45,26 @@ The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation templ
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
 
-•	Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
-•	Generates the userdata script for the EC2 instance that will:
-	••	Install python3, boto3 boto, multiprocessing_logging packages.
-	••	Install the lustre 2.10 client on the EC2 instance.
-	••	Mount the FSx for Lustre file system under /fsx mount path.
-	••	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
-	••	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
-•	Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
+*	Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
+*	Generates the userdata script for the EC2 instance that will:
+	**	Install python3, boto3 boto, multiprocessing_logging packages.
+	**	Install the lustre 2.10 client on the EC2 instance.
+	**	Mount the FSx for Lustre file system under /fsx mount path.
+	**	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
+	**	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
+**	Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
 
 
 The cache eviction script executes the following steps on the temporary EC2 instance that is launched:
 
-•	Scans the user input directory path  or root of the FSx file system to identify all files that have not been accessed in N days. 
-•	Validates these least recently accessed files identified in the previous step are in a hsm state suitable for releasing the space. Files in one of these hsm states will be ignored: [" ", "dirty","released","lost","non-release","non-archive"]
-•	Identifies the size and access time of these least recently accessed files.
-•	Determines space used by these least recently accessed files. If total space used by these files:
-		••	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
-		••	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
-•	Initiates a hsm release to release space used by these files.
-•	Terminates the EC2 instance and sends a SNS email notification.
+*	Scans the user input directory path  or root of the FSx file system to identify all files that have not been accessed in N days. 
+*	Validates these least recently accessed files identified in the previous step are in a hsm state suitable for releasing the space. Files in one of these hsm states will be ignored: [" ", "dirty","released","lost","non-release","non-archive"]
+*	Identifies the size and access time of these least recently accessed files.
+*	Determines space used by these least recently accessed files. If total space used by these files:
+		**	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
+		**	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
+*	Initiates a hsm release to release space used by these files.
+*	Terminates the EC2 instance and sends a SNS email notification.
 
 
 The execution of the Lambda function is monitored by CloudWatch. The Lambda function updates the status to the CloudWatch LogGroup created by the stack. The exectuion of the cache eviction script on the EC2 instance is logged to /<FSx Mount Path>/Cache-Eviction-Logs/.  An email notification is sent with location of the cache eviction log when the script is triggered.
@@ -120,10 +125,6 @@ a| *_Select_* - *<Select your security group id that will be used to launch the 
 
 === Launching the stack
 
-
-To better understand the solution and the CloudFormation input parameters, please watch the following short video clip.
-
-image::<tbd>.gif[align="left", width=600]
 
 To launch the CloudFormation stack, click on the link below for the source AWS region and enter the input parameters. You can optionally launch the CloudFormation template from a command line using a parameter file. Links to these sample scripts are below the table.
 
@@ -200,24 +201,47 @@ You should see the following resources in your AWS mangagement console. These re
 
 If you need to adjust or change the threshold value for the CloudWatch Alarm after the stack was deployed, you can do so by going to the CloudWatch console. Select the Alarm -> Click on *Actions* -> *Edit*. Then edit the value under *Define the threshold value.*
 
+Screenshot below shows an example Alarm configured on a FSx file system by the Cache Eviction solution. The low-water-mark for the free capacity is set to 200GB.
+
+image::Alarm.png
+
+Screen shot below shows the details of the Alarm
+
+image::Alarm-details.png
 
 === Troubleshooting
 
 
-Lambda Execution Logs
+*Lambda Execution Logs*
 
-You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggred.  You can check metrics for the Lambda function  by Clicking on Monitoring  tab under your Lambda Function.
+You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggred.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
 
 To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest Log Stream* to view the execution events for the Lambda function.
 
 
 An example output from a successful Lambda invocation is shown below:
 
+image::lambda-function-logs.png
 
 
-Completion Report
+*Python Script execution logs*
 
-Log completion reports are stored under: 
+Logs from execution of the python script are stored under: /<FSx Mount Path>/Cache-Eviction-Logs/
+
+An example output from successful execution of the script is shown below:
+
+24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting Cache Eviction process with input arguments: {'mountpath': '/fsx/', 'lwmfreecapacity': '200000000000', 'hwmfreecapacity': '500000000000', 'minage': '1', 'sns': 'arn:aws:sns:us-east-2:012345678920:FSxL-Cache-Evict-SNSTopicFSxLEmail-1ABCDEFGHIJK6', 'region': 'us-east-2'}
+24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting discovery of files not accessed for more than 1 day on FSx mount path /fsx/
+24-Jul-20 22:36:16 - fsx-cache-eviction.py - INFO - Identified 365451 files that have not been accessed for more than 1 days. See file list below:
+24-Jul-20 22:36:16 - fsx-cache-eviction.py - INFO - Identified hsm state for least recently accessed files, Validating if their hsm state is suitable for hsm release
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Total files identified as suitable for hsm release is: 6430 .Total files ignored due to invalid hsm state for release  is: 358985
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Successfully identified last access time and size for least recently accessed files. Total files checked is: 6430
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Validating capacity of files identifed as suitable for hsm release
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Total size of all files that will be released is: 300006928990 bytes to free up target capacity of:  300000000000 bytes. Total number of files that will be released is: 2193
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Initiating hsm release. hsm_release is a non blocking call so please wait few minutes to review the released space
+24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Initiating termination of EC2 instance
+24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Below is the full list of least recently accessed files on which hsm release was triggered:
+[' List of files']
 
 
 === Deleting Resources
