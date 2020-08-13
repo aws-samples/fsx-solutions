@@ -203,11 +203,11 @@ If you need to adjust or change the threshold value for the CloudWatch Alarm aft
 
 Screenshot below shows an example Alarm configured on a FSx file system by the Cache Eviction solution. The low-water-mark for the free capacity is set to 200GB.
 
-image::Alarm.png
+image::Alarm.png[]
 
 Screen shot below shows the details of the Alarm
 
-image::Alarm-details.png
+image::Alarm-details.png[]
 
 === Troubleshooting
 
@@ -221,7 +221,7 @@ To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*
 
 An example output from a successful Lambda invocation is shown below:
 
-image::lambda-function-logs.png
+image::lambda-function-logs.png[]
 
 
 *Python Script execution logs*
@@ -231,15 +231,25 @@ Logs from execution of the python script are stored under: /<FSx Mount Path>/Cac
 An example output from successful execution of the script is shown below:
 
 24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting Cache Eviction process with input arguments: {'mountpath': '/fsx/', 'lwmfreecapacity': '200000000000', 'hwmfreecapacity': '500000000000', 'minage': '1', 'sns': 'arn:aws:sns:us-east-2:012345678920:FSxL-Cache-Evict-SNSTopicFSxLEmail-1ABCDEFGHIJK6', 'region': 'us-east-2'}
+
 24-Jul-20 22:32:54 - fsx-cache-eviction.py - INFO - Starting discovery of files not accessed for more than 1 day on FSx mount path /fsx/
+
 24-Jul-20 22:36:16 - fsx-cache-eviction.py - INFO - Identified 365451 files that have not been accessed for more than 1 days. See file list below:
+
 24-Jul-20 22:36:16 - fsx-cache-eviction.py - INFO - Identified hsm state for least recently accessed files, Validating if their hsm state is suitable for hsm release
+
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Total files identified as suitable for hsm release is: 6430 .Total files ignored due to invalid hsm state for release  is: 358985
+
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Successfully identified last access time and size for least recently accessed files. Total files checked is: 6430
+
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Validating capacity of files identifed as suitable for hsm release
+
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Total size of all files that will be released is: 300006928990 bytes to free up target capacity of:  300000000000 bytes. Total number of files that will be released is: 2193
+
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Initiating hsm release. hsm_release is a non blocking call so please wait few minutes to review the released space
+
 24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Initiating termination of EC2 instance
+
 24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Below is the full list of least recently accessed files on which hsm release was triggered:
 [' List of files']
 
