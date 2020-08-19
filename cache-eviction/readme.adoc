@@ -37,6 +37,8 @@ If the data is read from client cache, no network request is sent to Lustre file
 
 *Note*: This is a very important behavior to take into consideration while deploying the Cache Eviction Solution. As atime updates are lazy, the Cache Eviction solution may not have the most recent atime for files that have been cached locally on clients. This can lead to some recently acessed files getting evicted FSx. The metadata is still present on FSx and data will be read back from linked S3 bucket or prefix upon next access.
 
+The FSx file system should be mounted without the noatime on the clients.
+
 
 === Environment and architecture
 
@@ -110,7 +112,7 @@ a| *_Enter_* - *Enter your file system id* Ex: fs-01234567900
 a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
 | *Low-water-mark to start FSx Cache eviction*
 a| *_Enter_* - *<size in bytes>* Ex: 2400000000000 (for 2.4 TB)
-| *Low-water-mark to start FSx Cache eviction*
+| *High-water-mark to stop FSx Cache eviction*
 a| *_Enter_* - *<size in bytes>* Ex: 3000000000000 (for 3.0 TB)
 | *Minimum age for least recently accessed files*
 a| *_Enter_* - *<minimum age of least recently accessed files to be evicted in days>* Ex: 1  (to evict files not accessed for more than 1 day)
@@ -254,6 +256,14 @@ An example output from successful execution of the script is shown below:
 24-Jul-20 22:36:49 - fsx-cache-eviction.py - INFO - Below is the full list of least recently accessed files on which hsm release was triggered:
 [' List of files']
 ----
+
+=== Additional Considerations and Recommendations
+This solution covers managing the Cache Eviction process based on free capacity on your file system using a CloudWatch Alarm. You can customize this solution to run the Cache Eviction process at regular intervals using scheduled CloudWatch Event or incorporate this as part of your workflow.
+
+Some things to keep in mind:
+. Consider using a larger instance type to run the python script. By default the solution uses m5.2xlarge.
+. Test the time taken by the Cache Eviction Process for large file systems with millions of files. you may want to consider setting up the Cache Eviction at sub directory level, and per directory vs entire file system. 
+
 
 === Deleting Resources
 All AWS resources created using the CloudFormation template can be removed by deleting the CloudFormation stack. Deleting the stack will not delete the FSx for Lustre file system.
