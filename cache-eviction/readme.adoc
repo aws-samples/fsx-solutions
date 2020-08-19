@@ -96,7 +96,7 @@ Below is a list of AWS resources created when the CloudWatch Alarm is triggered.
 === Prerequisites
 An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template. 
 
-The file system should be mounted on all compute instances without the *noatimeo* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
+The file system should be mounted on all compute instances without the *noatime* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
 
 
 === CloudFormation template inputs
@@ -218,7 +218,7 @@ image::Alarm-details.png[]
 
 You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggred.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
 
-To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest Log Stream* to view the execution events for the Lambda function.
+To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest *Log Stream* to view the execution events for the Lambda function.
 
 
 An example output from a successful Lambda invocation is shown below:
