@@ -261,8 +261,8 @@ An example output from successful execution of the script is shown below:
 This solution covers managing the Cache Eviction process based on free capacity on your file system using a CloudWatch Alarm. You can customize this solution to run the Cache Eviction process at regular intervals using scheduled CloudWatch Event or incorporate this as part of your workflow.
 
 Some things to keep in mind:
-. Consider using a larger instance type to run the python script. By default the solution uses m5.2xlarge.
-. Test the time taken by the Cache Eviction Process for large file systems with millions of files. you may want to consider setting up the Cache Eviction at sub directory level, and per directory vs entire file system. 
+* Consider using a larger instance type to run the python script. By default the solution uses m5.2xlarge.
+* Test the time taken by the Cache Eviction Process for large file systems with millions of files. you may want to consider setting up the Cache Eviction at sub directory level, and per directory vs entire file system. 
 
 
 === Deleting Resources
