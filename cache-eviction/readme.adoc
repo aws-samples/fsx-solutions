@@ -146,6 +146,9 @@ a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/h
 | *Oregon* (us-west-2)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
+| *Canada* (ca-central-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ca-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
 | *Frankfurt* (eu-central-1)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
@@ -155,8 +158,14 @@ a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/h
 | *London* (eu-west-2)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
+| *Paris* (eu-west-3)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-3#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
 | *Stockholm* (eu-north-1)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Mumbai* (ap-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *Singapore* (ap-southeast-1)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
@@ -166,6 +175,9 @@ a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/h
 
 | *Tokyo* (ap-northeast-1)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Seoul* (ap-northeast-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *Hong Kong* (ap-east-1)
 a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-east-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
