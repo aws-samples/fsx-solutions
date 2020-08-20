@@ -18,32 +18,32 @@ Errors or corrections? Contact kurdekar@amazon.com
 
 This solution helps AWS customers using Amazon FSx for Lustre to automatically manage free capacity on the file system and save on file system costs.
 
-The Cache Eviction solution for Amazon FSx for Lustre is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system. If the file system free capacity drops below the configured threshold (low-water-mark), the solution evicts (releases) space consumed by least recently accessed files on the FSx file system. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents.
+The Cache Eviction solution for Amazon FSx for Lustre is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system. If the file system free capacity drops below the configured threshold (low-water-mark), the solution evicts (releases) space consumed by least recently accessed files on the FSx file system. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents. The contents are read back into the file system on subsequent access.
 
-Amazon FSx for Lustre provides high-performance file systems optimized for fast workload processing. It can support workloads such as machine learning, high performance computing (HPC), video processing, financial modeling, and electronic design automation (EDA). These workloads commonly require data to be presented using a scalable, high-speed file system interface for data access. Many enterprises and AWS customers often store their datasets and build their data lakes on Amazon S3. Since Amazon FSx for Lustre is deeply integrated with S3, customers can create a new FSx for Lustre file system linked to their S3 bucket in minutes. FSx for Lustre file systems transparently present S3 objects as files when linked to a S3 data repository. This enables customers to use FSx file system as a fast cache and process data faster using a high-performance, POSIX-complaint, and fully managed file system. 
+Amazon FSx for Lustre provides high-performance file systems optimized for fast workload processing. It can support workloads such as machine learning, high performance computing (HPC), video processing, financial modeling, and electronic design automation (EDA). These workloads commonly require data to be presented using a scalable, high-speed file system interface for data access. Many AWS customers store their datasets and build their data lakes on Amazon S3. Since Amazon FSx for Lustre is deeply integrated with S3, customers can create a new FSx for Lustre file system linked to their S3 bucket in minutes. 
 
-When you create a new ﬁle system linked to a data repository,Amazon FSx automatically imports the ﬁle metadata (the name, ownership, timestamp, and permissions) of the objects in your repository, such as an Amazon S3 bucket. Amazon FSx makes them visible as new ﬁles and directories in the Amazon FSx for Lustre ﬁle system. Amazon FSx transparently copies the content of a file from your repository and loads it into the ﬁle system when your application first accesses the file in FSx.
+When you create a new ﬁle system linked to S3 data repository,Amazon FSx automatically imports the ﬁle metadata (the name, ownership, timestamp, and permissions) of the objects in your repository. Amazon FSx makes them visible as new ﬁles and directories in the Amazon FSx for Lustre ﬁle system. Amazon FSx transparently copies the content of a file from your repository and loads it into the ﬁle system when your application first accesses the file in FSx. This enables customers to use FSx file system as a fast cache and process data faster using a high-performance, POSIX-complaint, and fully managed file system. 
 
-Many high-performance workloads store large datasets in S3 that can span hundreds of TB's or PB's. Instead of spinning up a very large FSx for Lustre file system that is equivalent to the size of your dataset in S3, customers can create a smaller file system that is large enough to hold the active working dataset, and deploy the Cache Eviction solution to manage capacity. All files and directories from the linked S3 repository are available on the file system for processing. After processing is complete, customers can write results back to the linked S3 data repository using the data repository task API, and release space consumed by files that are no longer needed for active processing. 
+The datasets in S3 data repository can span from few hundred TB's to several PB's. All of this data needs to be accessible to the high-performance compute instances through the FSx for Lustre file system. Instead of spinning up a very large FSx for Lustre file system that is equivalent to the size of your dataset in S3, customers can create a smaller file system that is large enough to hold the active working dataset and run their processing jobs. After processing is complete, customers can write results back to the linked S3 data repository using the data repository task API, and release space consumed by files that are no longer needed for active processing. 
 
 
-By deploying a cache eviction solution similar to the sample code provided here, customers can automatically manage capacity on their FSx file system.  When the free capacity threshold is breached, the Cache Eviction Solution evicts files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
+By deploying a Cache Eviction solution similar to the sample code provided here, customers can automatically manage free capacity on their FSx file system.  When the free capacity threshold is breached, the Cache Eviction Solution evicts files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
 
 
 === Understanding file access time updates on Lustre
 
 Lustre will update the atime of files lazily as it is not practical to maintain fully coherent atime updates in a high-performance cluster file system.  
 
-If the data is read from client cache, no network request is sent to Lustre file servers, as the data is in client cache. To optimize the filesystem performance, Lustre does not send request to update atime on server if it was not needed. However, if the data was not available in client cache, it will request data from the Lustre file servers and update the atime.  If an inode needs to be updated as is the case with writes, the atime is updated.
+If the data is read from client cache, no network request is sent to Lustre file servers, as the data is in client cache. To optimize the file system performance, Lustre does not send request to update atime on server if it was not needed. However, if the data was not available in client cache, it will request data from the Lustre file servers and update the atime.  If an inode needs to be updated as is the case with writes, the atime is updated.
 
-*Note*: This is a very important behavior to take into consideration while deploying the Cache Eviction Solution. As atime updates are lazy, the Cache Eviction solution may not have the most recent atime for files that have been cached locally on clients. This can lead to some recently acessed files getting evicted FSx. The metadata is still present on FSx and data will be read back from linked S3 bucket or prefix upon next access.
+*Note*: This is a very important behavior to take into consideration while deploying the Cache Eviction Solution. As atime updates are lazy, the Cache Eviction solution may not have the most recent atime for files that have been cached locally on clients. This can lead to some recently accessed files getting evicted FSx. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents. The contents are read back into the file system on subsequent access.
 
 The FSx file system should be mounted without the noatime on the clients.
 
 
 === Environment and architecture
 
-The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notifiction to a Lambda endpoint which invokes the AWS Lambda function. 
+The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notification to a Lambda endpoint which invokes the AWS Lambda function. 
 
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
@@ -51,11 +51,11 @@ The AWS Lambda function performs the following steps and logs status and errors 
 *	Queries the FSx API to identify the DNS name, mount name and subnet for your FSx for Lustre file system.
 *	Generates the userdata script for the EC2 instance that will:
 	**	Install python3, boto3 boto, multiprocessing_logging packages.
-	**	Install the lustre 2.10 client on the EC2 instance.
+	**	Install the Lustre 2.10 client on the EC2 instance.
 	**	Mount the FSx for Lustre file system under /fsx mount path.
 	**	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
 	**	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
-**	Invokves the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
+**	Invokes the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
 
 
 The cache eviction script executes the following steps on the temporary EC2 instance that is launched:
@@ -70,7 +70,7 @@ The cache eviction script executes the following steps on the temporary EC2 inst
 *	Terminates the EC2 instance and sends a SNS email notification.
 
 
-The execution of the Lambda function is monitored by CloudWatch. The Lambda function updates the status to the CloudWatch LogGroup created by the stack. The exectuion of the cache eviction script on the EC2 instance is logged to /<FSx Mount Path>/Cache-Eviction-Logs/.  An email notification is sent with location of the cache eviction log when the script is triggered.
+The execution of the Lambda function is monitored by CloudWatch. The Lambda function updates the status to the CloudWatch LogGroup created by the stack. The execution of the cache eviction script on the EC2 instance is logged to /<FSx Mount Path>/Cache-Eviction-Logs/.  An email notification is sent with location of the cache eviction log when the script is triggered.
 
 
 The following is a diagram of the architecture.
@@ -193,7 +193,7 @@ link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-e
 
 Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. A email subscription format will look as shown below:
 
-You should see the following resources in your AWS mangagement console. These resources will include the CloudFormation Stack Name in the resource names:
+You should see the following resources in your AWS management console. These resources will include the CloudFormation Stack Name in the resource names:
 
 •	CloudWatch Alarm to monitor Space on your FSx for Lustre file system
 •	Lambda function that will be triggered when file system capacity drops below the configured threshold
@@ -217,7 +217,7 @@ image::Alarm-details.png[]
 
 *Lambda Execution Logs*
 
-You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggred.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
+You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggered.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
 
 To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest *Log Stream* to view the execution events for the Lambda function.
 
@@ -246,7 +246,7 @@ An example output from successful execution of the script is shown below:
 
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Successfully identified last access time and size for least recently accessed files. Total files checked is: 6430
 
-24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Validating capacity of files identifed as suitable for hsm release
+24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Validating capacity of files identified as suitable for hsm release
 
 24-Jul-20 22:36:17 - fsx-cache-eviction.py - INFO - Total size of all files that will be released is: 300006928990 bytes to free up target capacity of:  300000000000 bytes. Total number of files that will be released is: 2193
 
@@ -258,13 +258,14 @@ An example output from successful execution of the script is shown below:
 [' List of files']
 ----
 
-=== Additional Considerations and Recommendations
+=== Important Considerations and Recommendations
 This solution covers managing the Cache Eviction process based on free capacity on your file system using a CloudWatch Alarm. You can customize this solution to run the Cache Eviction process at regular intervals using scheduled CloudWatch Event or incorporate the Cache Eviction process as part of your workflow.
 
-Some additional considerations:
+Some key considerations:
 
-•	Consider using a larger instance type for large file systems with large amount of data. By default the solution uses m5.2xlarge.
-•	Test the time taken by the Cache Eviction Process for large file systems with millions of files. you may want to consider setting up the Cache Eviction at sub directory level vs the entire file system. 
+•	Customers deploying the solution should POC this solution for their requirements.
+•	Test and validate the time taken by the Cache Eviction Process for very large file systems with millions of files. Consider running multiple Cache Eviction tasks at a sub directory level vs the entire file system. 
+•	Consider using a larger instance type for large file systems with large amount of data. By default this solution uses m5.2xlarge.
 
 
 === Deleting Resources
