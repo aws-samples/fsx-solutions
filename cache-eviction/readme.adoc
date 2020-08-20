@@ -16,7 +16,7 @@ Errors or corrections? Contact kurdekar@amazon.com
 
 === Overview
 
-This solution helps AWS customers using Amazon FSx for Lustre to automatically manage free capacity on the file system and save on file system costs.
+This solution helps AWS customers using Amazon FSx for Lustre to automatically manage free capacity on the file system and save on storage costs.
 
 The Cache Eviction solution for Amazon FSx for Lustre is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system. If the file system free capacity drops below the configured threshold (low-water-mark), the solution evicts (releases) space consumed by least recently accessed files on the FSx file system. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents. The contents are read back into the file system on subsequent access.
 
