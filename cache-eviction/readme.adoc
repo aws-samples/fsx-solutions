@@ -203,7 +203,7 @@ link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-e
 
 === Managing the Solution
 
-Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. A email subscription format will look as shown below:
+Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. 
 
 You should see the following resources in your AWS management console. These resources will include the CloudFormation Stack Name in the resource names:
 
