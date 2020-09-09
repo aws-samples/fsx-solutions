@@ -1,0 +1,216 @@
+= Encryption in Transit Status Reporter for Amazon FSx for Windows 
+:icons:
+:linkattrs:
+:imagesdir: resources/images
+
+
+© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved.
+This sample code is made available under the MIT-0 license. See the LICENSE file.
+
+Errors or corrections? Contact kurdekar@amazon.com
+
+:toc-title: Table of Contents
+:toclevels: 3
+:toc:
+
+
+=== Overview
+
+This solution helps AWS customers using Amazon FSx for Windows to monitor the status of Encryption in Transit setting on FSx file systems. Amazon FSx automatically encrypts data in transit using SMB encryption as you access your file system without the need for you to modify your applications. Encryption of data in transit is supported on file shares that are mapped on a compute instance that supports SMB protocol 3.0 or newer. You can enforce encryption in transit for all connections to your file shares by running the PowerShell command:
+
+PS> Set-FSxSmbServerConfiguration -RejectUnencryptedAccess $True
+
+You can monitor the status of Encryption in Transit by running the PowerShell command below from the Remote PowerShell Endpoint for each file system:
+
+PS> Get-FSxSmbServerConfiguration
+
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that creates AWS resources to schedule monitoring the status of Encryption in Transit on your FSx file system. The solution identifies all FSx for Windows file systems in your AWS Region and validates *RejectUnencryptedAccess* setting is set to *True*. The solution generates a list of all file systems that have this parameter set to *False* and emails the report using Amazon SNS. This allows you to monitor Encryption in Transit status using a automated mechanism.
+
+
+=== Environment and architecture
+
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that must be launched in the same AWS region as your Amazon FSx for Windows file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Event, AWS Systems Manager SSM Document, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Event schedules monitoring the Encryption in Transit status on the file system based on a user defined *cron* schedule specified in the CloudFormation stack input. The CloudWatch Event triggers a AWS Lambda function that emails a report with list of all file systems that have Encryption in Transit disabled. 
+
+
+The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
+
+*	Queries the FSx API to identify the FSx file system ID, Storage Type and Remote PowerShell Endpoint.
+*	Executes the AWS Systems Manager SSM Document from an user defined EC2 instance with an SSM agent installed. The SSM document connects to the Remote PowerShell Endpoint of the FSx file system and executes *Get-FSxSmbServerConfiguration* to validate the Encryption in Transit status.
+*	Gathers the output of the SSM Document and identifies all FSx file systems that have *RejectUnencryptedAccess* set to *False*.
+*	Sends a SNS notification email with a report of all FSx file systems that have Encryption in Transit disabled. 
+
+
+The execution of the Lambda function is monitored by CloudWatch. The Lambda function updates the status to the CloudWatch LogGroup created by the stack. 
+
+
+The following is a diagram of the architecture.
+
+image::Encryption-in-Transit-Reporter-Architecture.png[align="left", width=600]
+
+=== Resources created
+
+Below is a list of AWS resources created when launching the stack using the CloudFormation template.
+
+•	CloudFormation stack
+•	Lambda function
+•	Lambda IAM roles
+•	SSM Document
+•	CloudWatch Event
+•	SNS topic
+
+
+=== Prerequisites
+
+An EC2 instance that is joined to the same Active Directory domain as your FSx file systems. This EC2 will be used to execute the PowerShell commands using the SSM document created by the CloudFormation Stack. The EC2 instance should have a IAM instance profile with permissions to get Active Directory credentials from the AWS Systems Manager Parameter Store and also permissions to execute the SSM Document. Alternately you can also use *AmazonSSMFullAccess* AWS managed policy for your IAM instance profile. 
+
+Before deploying this solution, create a AWS Systems Manager Parameter Store parameter that will be used to store the user name and password of a member of the of the file system administrators group. In AWS Managed Microsoft AD, that group is AWS Delegated FSx Administrators. In your self-managed Microsoft AD, that group is Domain Admins or the custom group that you specified for administration when you created your file system.
+
+
+Make sure security group for our FSx file system is configured to allow connections to Remote PowerShell endpoint on port 5985. For full list of all ports that need to be configured with your security group refer link:FSx Security group ports[https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limit-access-security-groups.html]
+
+=== CloudFormation template inputs
+
+The CloudFormation template takes the following inputs:
+[cols="3,4"]
+|===
+| *Stack name*
+a| *_Enter_* - *Enter a Name for your stack*
+| *Storage Type*
+a| *Select* - *WINDOWS*
+| *Task schedule cron expression*
+a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
+| *adParameterName*
+a| *_Enter_* - *Parameter Name for the AD user credentials in your SSM parameter store* Ex: adCredParameter
+| *Windows EC2 instance Id*
+a| *_Enter_* - *Windows EC2 instance Id that will be used to run the SSM command* Ex: i-013abcdef235gde
+| *Email address*
+a| *_Enter_* - *<your email address to receive SNS notification>* 
+|===
+
+
+=== Launching the stack
+
+
+To launch the CloudFormation stack, click on the link below for the source AWS region and enter the input parameters. You can optionally launch the CloudFormation template from a command line using a parameter file. Links to these sample scripts are below the table.
+
+
+|===
+|Region | Launch template with a new VPC
+| *N. Virginia* (us-east-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Ohio* (us-east-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?&templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *N. California* (us-west-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Oregon* (us-west-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Canada* (ca-central-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ca-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Frankfurt* (eu-central-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Ireland* (eu-west-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *London* (eu-west-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Paris* (eu-west-3)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-3#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Stockholm* (eu-north-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Mumbai* (ap-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Singapore* (ap-southeast-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Sydney* (ap-southeast-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Tokyo* (ap-northeast-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Seoul* (ap-northeast-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+| *Hong Kong* (ap-east-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-east-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+|===
+
+
+==== Optional scripts (not needed if launching the stack using the table links above)
+
+You can download the CloudFormation Template and the Lambda deployment package from using the links provided below and customize it to meet your requirements:
+
+The CloudFormation template.
+
+link:https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml>[https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/FSxw-encryption-in-transit-reporter.yaml]
+
+The Lambda function deployment package.
+
+link:https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/fsxw-encryption-in-transit-reporter.zip>[https://solution-references.s3.amazonaws.com/fsx/FSxW-EncryptionInTransit-Reporter/fsxw-encryption-in-transit-reporter.zip]
+
+
+Copy the Lambda deployment package to a S3 bucket and update the following section in your CloudFormation template. Replace the S3Bucket and S3Key values with your own S3 Bucket and prefix:
+
+      Code:
+        S3Bucket: !Sub solution-references-${AWS::Region}
+        S3Key: fsx/FSxW-EncryptionInTransit-Reporter/fsxw-encryption-in-transit-reporter.zip
+
+=== Managing the Solution
+
+Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. 
+
+You should see the following resources in your AWS management console. These resources will include the CloudFormation Stack Name in the resource names:
+
+•	CloudWatch Event with a cron schedule to monitor status of Encryption in Transit on your FSx for Windows file systems
+•	Lambda function that will be triggered as per the cron schedule
+•	Lambda IAM role
+•	Systems Manager SSM Document
+•	SNS topic
+
+
+If you need to adjust or change the cron schedule after the stack was deployed, you can do so by going to the CloudWatch console. Go to *Events* -> *Rules* and Select Rule created by the CloudFormation Template. Next, Click on *Actions* -> *Edit*. Then edit the value under *Cron expression* under *Event Source*.
+
+Screenshot below shows an example CloudWatch Event Rule created by the solution. The cron schedule is set to execute every 10 minutes.
+
+image::Alarm.png[]
+
+Screen shot below shows the details of the Alarm
+
+image::Event.png[]
+
+=== Troubleshooting
+
+
+*Lambda Execution Logs*
+
+You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggered.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
+
+To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest *Log Stream* to view the execution events for the Lambda function.
+
+
+An example output from a successful Lambda invocation is shown below:
+
+image::lambda-function-logs.png[]
+
+
+
+=== Important Considerations and Recommendations
+
+•	Customers deploying the solution should POC this solution and make necessary adjustments to meet their requirements.
+
+=== Deleting Resources
+All AWS resources created using the CloudFormation template can be removed by deleting the CloudFormation stack. Deleting the stack will not delete the EC2 instance or FSx file systems.
+
+=== Participation
+
+We encourage participation; if you find anything, please submit an issue. However, if you want to help raise the bar, **submit a PR**!
