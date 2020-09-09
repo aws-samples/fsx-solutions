@@ -78,9 +78,9 @@ a| *_Enter_* - *Enter a Name for your stack*
 | *Storage Type*
 a| *Select* - *WINDOWS*
 | *Task schedule cron expression*
-a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
-| *adParameterName*
 a| *_Enter_* - *Enter the task execution schedule in cron format UTC time.* Ex: 15 10 * * ? * (Run once at 10:15 UTC every day)
+| *adParameterName*
+a| *_Enter_* - *Enter the Parameter name for your Active Directory Credentials
 | *Windows EC2 instance Id*
 a| *_Enter_* - *Windows EC2 instance Id that will be used to run the SSM command* Ex: i-013abcdef235gde
 | *Email address*
