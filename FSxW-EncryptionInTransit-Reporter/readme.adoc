@@ -18,18 +18,18 @@ Errors or corrections? Contact kurdekar@amazon.com
 
 This solution helps AWS customers using Amazon FSx for Windows to monitor the status of Encryption in Transit setting on FSx file systems. Amazon FSx automatically encrypts data in transit using SMB encryption as you access your file system without the need for you to modify your applications. Encryption of data in transit is supported on file shares that are mapped on a compute instance that supports SMB protocol 3.0 or newer. You can enforce encryption in transit for all connections to your file shares by running the PowerShell command:
 
-PS> Set-FSxSmbServerConfiguration -RejectUnencryptedAccess $True
+		PS> Set-FSxSmbServerConfiguration -RejectUnencryptedAccess $True
 
-You can monitor the status of Encryption in Transit by running the PowerShell command below from the Remote PowerShell Endpoint for each file system:
+You can check if Encryption in Transit is enabled by running the PowerShell command below from the Remote PowerShell Endpoint for each FSx file system:
 
-PS> Get-FSxSmbServerConfiguration
+		PS> Get-FSxSmbServerConfiguration
 
-The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that creates AWS resources to schedule monitoring the status of Encryption in Transit on your FSx file system. The solution identifies all FSx for Windows file systems in your AWS Region and validates *RejectUnencryptedAccess* setting is set to *True*. The solution generates a list of all file systems that have this parameter set to *False* and emails the report using Amazon SNS. This allows you to monitor Encryption in Transit status using a automated mechanism.
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that creates AWS resources to schedule monitoring of Encryption in Transit status on your FSx file system. The solution identifies all FSx for Windows file systems in your AWS Region and validates if the *RejectUnencryptedAccess* setting is set to *True*. The solution generates a list of all file systems that have this parameter set to *False* and then emails the report using Amazon SNS. This allows you to monitor Encryption in Transit setting across your FSx file systems using a automated mechanism.
 
 
 === Environment and architecture
 
-The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that must be launched in the same AWS region as your Amazon FSx for Windows file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Event, AWS Systems Manager SSM Document, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Event schedules monitoring the Encryption in Transit status on the file system based on a user defined *cron* schedule specified in the CloudFormation stack input. The CloudWatch Event triggers a AWS Lambda function that emails a report with list of all file systems that have Encryption in Transit disabled. 
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that must be launched in the same AWS region as your Amazon FSx for Windows file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Event, AWS Systems Manager SSM Document, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Event schedules monitoring the Encryption in Transit status on the file system based on a user defined *cron* schedule specified in the CloudFormation stack input. The CloudWatch Event triggers a AWS Lambda function that emails a report with list of all file systems that have Encryption in Transit setting disabled. 
 
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
@@ -80,7 +80,7 @@ a| *Select* - *WINDOWS*
 | *Task schedule cron expression*
 a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
 | *adParameterName*
-a| *_Enter_* - *Parameter Name for the AD user credentials in your SSM parameter store* Ex: adCredParameter
+a| *_Enter_* - *Enter the task execution schedule in cron format UTC time.* Ex: 15 10 * * ? * (Run once at 10:15 UTC every day)
 | *Windows EC2 instance Id*
 a| *_Enter_* - *Windows EC2 instance Id that will be used to run the SSM command* Ex: i-013abcdef235gde
 | *Email address*
@@ -182,10 +182,6 @@ If you need to adjust or change the cron schedule after the stack was deployed, 
 
 Screenshot below shows an example CloudWatch Event Rule created by the solution. The cron schedule is set to execute every 10 minutes.
 
-image::Alarm.png[]
-
-Screen shot below shows the details of the Alarm
-
 image::Event.png[]
 
 === Troubleshooting
@@ -193,7 +189,7 @@ image::Event.png[]
 
 *Lambda Execution Logs*
 
-You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch alarm is triggered.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
+You can find the details of the Lambda execution in your CloudWatch logs when the CloudWatch Event is triggered.  You can check metrics for the Lambda function  by Clicking on *Monitoring* tab under your Lambda Function.
 
 To view the execution logs Go to *Monitoring* -> Click *View logs in CloudWatch*. Next, in the CloudWatch console window, under *Log streams* click on the latest *Log Stream* to view the execution events for the Lambda function.
 
@@ -206,7 +202,7 @@ image::lambda-function-logs.png[]
 
 === Important Considerations and Recommendations
 
-•	Customers deploying the solution should POC this solution and make necessary adjustments to meet their requirements.
+•	Customers deploying the solution should POC this solution and make necessary adjustments to cover their requirements.
 
 === Deleting Resources
 All AWS resources created using the CloudFormation template can be removed by deleting the CloudFormation stack. Deleting the stack will not delete the EC2 instance or FSx file systems.
