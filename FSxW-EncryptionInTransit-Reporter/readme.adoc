@@ -16,7 +16,7 @@ Errors or corrections? Contact kurdekar@amazon.com
 
 === Overview
 
-This solution helps AWS customers using Amazon FSx for Windows to monitor the status of Encryption in Transit setting on FSx file systems. Amazon FSx automatically encrypts data in transit using SMB encryption as you access your file system without the need for you to modify your applications. Encryption of data in transit is supported on file shares that are mapped on a compute instance that supports SMB protocol 3.0 or newer. You can enforce encryption in transit for all connections to your file shares by running the PowerShell command:
+This solution helps AWS customers using link:https://aws.amazon.com/fsx/windows/[Amazon FSx for Windows] to monitor the status of Encryption in Transit setting on FSx file systems. Amazon FSx automatically encrypts data in transit using SMB encryption as you access your file system without the need for you to modify your applications. Encryption of data in transit is supported on file shares that are mapped on a compute instance that supports SMB protocol 3.0 or newer. You can enforce encryption in transit for all connections to your file shares by running the PowerShell command:
 
 		PS> Set-FSxSmbServerConfiguration -RejectUnencryptedAccess $True
 
@@ -61,7 +61,7 @@ Below is a list of AWS resources created when launching the stack using the Clou
 
 === Prerequisites
 
-An EC2 instance that is joined to the same Active Directory domain as your FSx file systems. This EC2 instance will be used to execute the PowerShell commands using the SSM document created by the CloudFormation Stack. The EC2 instance should have a IAM instance profile with AmazonSSMManagedInstanceCore and AmazonSSMDirectoryServiceAccess managed policies. This allows the EC2 instance to get Active Directory credentials from the AWS Systems Manager Parameter Store and also permissions to execute PowerShell commands.
+An EC2 instance that is joined to the same Active Directory domain as your FSx file systems. This EC2 instance will be used to execute the PowerShell commands using the SSM document created by the CloudFormation Stack. The EC2 instance should have a IAM instance profile with _AmazonSSMManagedInstanceCore_ and _AmazonSSMDirectoryServiceAccess_ managed policies. This allows the EC2 instance to get Active Directory credentials from the AWS Systems Manager Parameter Store and also permissions to execute PowerShell commands.
 
 Before deploying this solution, create a AWS Systems Manager Parameter Store parameter that will be used to store the user name and password of a member of the of the file system administrators group. In AWS Managed Microsoft AD, that group is AWS Delegated FSx Administrators. In your self-managed Microsoft AD, that group is Domain Admins or the custom group that you specified for administration when you created your file system.
 
