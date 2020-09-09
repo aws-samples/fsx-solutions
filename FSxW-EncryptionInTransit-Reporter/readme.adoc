@@ -66,7 +66,7 @@ An EC2 instance that is joined to the same Active Directory domain as your FSx f
 Before deploying this solution, create a AWS Systems Manager Parameter Store parameter that will be used to store the user name and password of a member of the of the file system administrators group. In AWS Managed Microsoft AD, that group is AWS Delegated FSx Administrators. In your self-managed Microsoft AD, that group is Domain Admins or the custom group that you specified for administration when you created your file system.
 
 
-Make sure security group for our FSx file system is configured to allow connections to Remote PowerShell endpoint on port 5985. For full list of all ports that need to be configured with your security group refer link:https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limit-access-security-groups.html[FSx Security group ports
+Make sure security group for our FSx file system is configured to allow connections to Remote PowerShell endpoint on port 5985. For full list of all ports that need to be configured with your security group refer link:https://docs.aws.amazon.com/fsx/latest/WindowsGuide/limit-access-security-groups.html[FSx Security group ports]
 
 === CloudFormation template inputs
 
