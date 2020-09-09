@@ -20,22 +20,22 @@ This solution helps AWS customers using Amazon FSx for Windows to monitor the st
 
 		PS> Set-FSxSmbServerConfiguration -RejectUnencryptedAccess $True
 
-You can check if Encryption in Transit is enabled by running the PowerShell command below from the Remote PowerShell Endpoint for each FSx file system:
+You can check if Encryption in Transit is enforced by running the PowerShell command below from the Remote PowerShell Endpoint for each FSx file system:
 
 		PS> Get-FSxSmbServerConfiguration
 
-The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that creates AWS resources to schedule monitoring of Encryption in Transit status on your FSx file system. The solution identifies all FSx for Windows file systems in your AWS Region and validates if the *RejectUnencryptedAccess* setting is set to *True*. The solution generates a list of all file systems that have this parameter set to *False* and then emails the report using Amazon SNS. This allows you to monitor Encryption in Transit setting across your FSx file systems using a automated mechanism.
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that creates AWS resources and schedule monitoring of Encryption in Transit setting on your FSx file system. The solution identifies FSx for Windows file systems in your AWS Region and validates if the *RejectUnencryptedAccess* setting is set to *True*. The solution generates a report with list of file systems that have this parameter set to *False* and emails the report using Amazon SNS service. This allows you to monitor Encryption in Transit setting across your FSx file systems using a automated mechanism.
 
 
 === Environment and architecture
 
-The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that must be launched in the same AWS region as your Amazon FSx for Windows file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Event, AWS Systems Manager SSM Document, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Event schedules monitoring the Encryption in Transit status on the file system based on a user defined *cron* schedule specified in the CloudFormation stack input. The CloudWatch Event triggers a AWS Lambda function that emails a report with list of all file systems that have Encryption in Transit setting disabled. 
+The Encryption in Transit Status Reporter solution for Amazon FSx for Windows is an AWS CloudFormation template that must be launched in the same AWS region as your Amazon FSx for Windows file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Event, AWS Systems Manager SSM Document, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Event Rule schedules monitoring the Encryption in Transit setting on the file system based on a user defined *cron* schedule expression defined in the CloudFormation input. The CloudWatch Event triggers a AWS Lambda function which emails a report with list of all file systems that have Encryption in Transit setting disabled. 
 
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
 
-*	Queries the FSx API to identify the FSx file system ID, Storage Type and Remote PowerShell Endpoint.
-*	Executes the AWS Systems Manager SSM Document from an user defined EC2 instance with an SSM agent installed. The SSM document connects to the Remote PowerShell Endpoint of the FSx file system and executes *Get-FSxSmbServerConfiguration* to validate the Encryption in Transit status.
+*	Queries the FSx API to identify the FSx file system Id, Storage Type and Remote PowerShell Endpoint.
+*	Executes the AWS Systems Manager SSM Document from an user defined EC2 instance with an SSM agent installed. This allows the EC2 instance to connect to the Remote PowerShell Endpoint of the FSx file system and executes *Get-FSxSmbServerConfiguration* to validate the Encryption in Transit setting.
 *	Gathers the output of the SSM Document and identifies all FSx file systems that have *RejectUnencryptedAccess* set to *False*.
 *	Sends a SNS notification email with a report of all FSx file systems that have Encryption in Transit disabled. 
 
@@ -51,17 +51,17 @@ image::Encryption-in-Transit-Reporter-Architecture.png[align="left", width=600]
 
 Below is a list of AWS resources created when launching the stack using the CloudFormation template.
 
-•	CloudFormation stack
-•	Lambda function
-•	Lambda IAM roles
+•	CloudFormation Stack
+•	Lambda Function
+•	Lambda IAM role
 •	SSM Document
-•	CloudWatch Event
-•	SNS topic
+•	CloudWatch Event Rule
+•	SNS Topic
 
 
 === Prerequisites
 
-An EC2 instance that is joined to the same Active Directory domain as your FSx file systems. This EC2 will be used to execute the PowerShell commands using the SSM document created by the CloudFormation Stack. The EC2 instance should have a IAM instance profile with permissions to get Active Directory credentials from the AWS Systems Manager Parameter Store and also permissions to execute the SSM Document. Alternately you can also use *AmazonSSMFullAccess* AWS managed policy for your IAM instance profile. 
+An EC2 instance that is joined to the same Active Directory domain as your FSx file systems. This EC2 instance will be used to execute the PowerShell commands using the SSM document created by the CloudFormation Stack. The EC2 instance should have a IAM instance profile with permissions to get Active Directory credentials from the AWS Systems Manager Parameter Store and also permissions to execute the SSM Document. Alternately you can also use *AmazonSSMFullAccess* AWS managed policy for your IAM instance profile. 
 
 Before deploying this solution, create a AWS Systems Manager Parameter Store parameter that will be used to store the user name and password of a member of the of the file system administrators group. In AWS Managed Microsoft AD, that group is AWS Delegated FSx Administrators. In your self-managed Microsoft AD, that group is Domain Admins or the custom group that you specified for administration when you created your file system.
 
@@ -74,7 +74,7 @@ The CloudFormation template takes the following inputs:
 [cols="3,4"]
 |===
 | *Stack name*
-a| *_Enter_* - *Enter a Name for your stack*
+a| *_Enter_* - *Enter a name for your stack*
 | *Storage Type*
 a| *Select* - *WINDOWS*
 | *Task schedule cron expression*
