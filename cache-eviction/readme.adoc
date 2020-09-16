@@ -190,15 +190,15 @@ You can download the CloudFormation Template, the Lambda deployment package and 
 
 The CloudFormation template.
 
-link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 The Lambda function deployment package.
 
-link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
 
 The python script that runs on a temporary EC2 instance.
 
-link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py>[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
 
 
 === Managing the Solution
