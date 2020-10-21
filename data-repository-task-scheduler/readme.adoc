@@ -5,6 +5,11 @@
 :imagesdir: ./resources/images
 
 
+© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved. This sample code is made available under the MIT-0 license. See the LICENSE file.
+
+Errors or corrections? Contact darrylo@amazon.com
+
+
 == Summary
 
 The Data Repository Task Scheduler is an AWS CloudFormation template that creates AWS resources that schedules and monitors data repository tasks that copies data from an Amazon FSx for Lustre file system to an Amazon S3 data repository (optional configuration).
