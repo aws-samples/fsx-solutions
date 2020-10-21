@@ -126,7 +126,7 @@ link:https://solution-references.s3.amazonaws.com/fsx/data-repository-task-sched
 
 For a detailed description and examples on how to manage, run, edit, etc. task schedules, please refer to the link:https://solution-references.s3.amazonaws.com/fsx/Amazon+FSx+for+Lustre+Data+Repository+Task+Scheduler+User+Guide.pdf[Amazon FSx for Lustre Data Repository Task Scheduler User Guide].
 
-=== Managing the scheduler
+=== Deleting the scheduler
 
 Delete the CloudFormation stack to delete all AWS resources created to schedule data repository tasks. Deleting the CloudFormation stack will NOT delete the Amazon FSx for Lustre file system or the Amazon S3 data repository.
 
