@@ -1,14 +1,12 @@
 = Data Repository Task Scheduler
-
-© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved. This sample code is made available under the MIT-0 license. See the LICENSE file.
-
-Errors or corrections? Contact darrylo@amazon.com
-
 :toc:
 :icons:
 :linkattrs:
 :imagesdir: ./resources/images
 
+© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved. This sample code is made available under the MIT-0 license. See the LICENSE file.
+
+Errors or corrections? Contact darrylo@amazon.com
 
 == Summary
 
