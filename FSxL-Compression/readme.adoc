@@ -1,0 +1,114 @@
+= Migration script to compress existing data for Amazon FSx for Lustre 
+:icons:
+:linkattrs:
+:imagesdir: resources/images
+
+
+© 2021 Amazon Web Services, Inc. and its affiliates. All rights reserved.
+This sample code is made available under the MIT-0 license. See the LICENSE file.
+
+
+:toc-title: Table of Contents
+:toclevels: 3
+:toc:
+
+
+=== Overview
+
+Pre-requisite:
+
+    sudo python3 -m pip install pyyaml
+
+Because FSx Lustre file system is transactional, file system attribute changes like
+DataCompressionType only applies to new writes. To apply these attributes change to
+existing files, use this script to rewrite all Lustre regular files at a given
+path via "lfs migrate" command.
+
+Depends on the file system size and the amount of data stored, this script can take
+a long time to complete. It is generally recommended to:
+
+* Run this script while normal workloads are paused.
+* Run this script in a screen session.
+* Use guided divide-and-conquer approach if feasible.
+    ** Migrate one directory at a time. This can be achieved by
+        specifying the --migrate-path flag followed by the target
+        sub-directory name.
+    ** Specify a manifest file to list the file paths you would
+        like to rewrite. This can be achieved by specifying the
+        --manifest-input-path flag followed by your manifest file
+        path.
+
+Usage:
+
+  fsx_lustre_migrate_files.py [-h]
+                      [--migrate-path MIGRATE_PATH]
+                      [--concurrency CONCURRENCY]
+                      [--manifest-input-path MANIFEST_INPUT_PATH]
+                      [--manifest-output-path MANIFEST_OUTPUT_PATH]
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --migrate-path MIGRATE_PATH
+                          Path to directory where files will be rewritten with
+                          lfs migrate command. Must be a path under Lustre mount
+                          point. Default to be /fsx
+    --concurrency CONCURRENCY
+                          Number of concurrent threads to issue lfs migrate.
+                          Default to be the number of CPU cores.
+    --manifest-input-path MANIFEST_INPUT_PATH
+                          Optional input path to a manifest file that contains a
+                          list of file paths that the script will migrate.
+    --manifest-output-path MANIFEST_OUTPUT_PATH
+                          Override the path where the script writes the file
+                          list under given migrate-path. By default the script
+                          writes to a temp file at path
+                          /tmp/lfs_migrate_manifest.TIMESTAMP.
+
+=== Examples
+
+* Initial state, FS filled with 111 GiB of umcompressed data across 4 OSTs.
+
+    [ec2-user@ip-10-0-152-182 ~] lfs df -h
+    UUID                       bytes        Used   Available Use% Mounted on
+    t4xczbmv-MDT0000_UUID      172.1G        6.6M      172.0G   0% /fsx[MDT:0]
+    t4xczbmv-OST0000_UUID        1.4T       27.8G        1.4T   2% /fsx[OST:0]
+    t4xczbmv-OST0001_UUID        1.4T       27.8G        1.4T   2% /fsx[OST:1]
+    t4xczbmv-OST0002_UUID        1.4T       27.8G        1.4T   2% /fsx[OST:2]
+    t4xczbmv-OST0003_UUID        1.4T       27.8G        1.4T   2% /fsx[OST:3]
+
+    filesystem_summary:         5.6T      111.0G        5.5T   2% /fsx
+
+* Use AWS FSx CLI or navigate through AWS FSx Console to update DataCompressionType to `LZ4`. See https://docs.aws.amazon.com/fsx/latest/APIReference/API_UpdateFileSystem.html[FSx API documentation] for more details. 
+* Once your file system is updated, log on a host that is mounted with this file system, run
+
+    [ec2-user@ip-10-0-152-182 ~]$ sudo python3 -m pip install pyyaml
+    [ec2-user@ip-10-0-152-182 ~]# sudo python3 fsx_lustre_migrate_files.py --migrate-path /fsx/pfldir
+    2021-05-18 23:43:08 UTC [INFO] __main__ Using migrate path: /fsx/pfldir
+    2021-05-18 23:43:08 UTC [INFO] __main__ Using concurrency: 4
+    2021-05-18 23:43:08 UTC [INFO] __main__ Using manifest output path: /tmp/lfs_migrate_manifest.1621381388.2476823
+    2021-05-18 23:43:08 UTC [INFO] __main__ Starting recursive tree walk at path: /fsx/pfldir
+    2021-05-18 23:43:08 UTC [INFO] __main__ Writing Lustre file paths to manifest file at: /tmp/lfs_migrate_manifest.1621381388.2476823
+    2021-05-18 23:43:08 UTC [INFO] __main__ Starting 4 threads to migrate files.
+    2021-05-18 23:43:08 UTC [INFO] __main__ lfs_migrate completed for file: /fsx/pfldir/testdir/testdir/1
+    2021-05-18 23:43:08 UTC [INFO] __main__ lfs_migrate completed for file: /fsx/pfldir/testdir/1
+    2021-05-18 23:43:08 UTC [WARNING] __main__ Failed to fetch stripe configuration for file: /fsx/pfldir/testdir/testdir/1_s. This may be a symlink file. Skipping
+    2021-05-18 23:43:12 UTC [INFO] __main__ lfs_migrate completed for file: /fsx/pfldir/testfile
+    2021-05-18 23:43:12 UTC [INFO] __main__ lfs_migrate completed for file: /fsx/pfldir/testfile2
+    ...
+    ...
+
+* After the script completes, you should be able to see the physical disk usage on the file system has shrinked due to compression.
+
+    [ec2-user@ip-10-0-152-182 ~]# lfs df -h
+    UUID                       bytes        Used   Available Use% Mounted on
+    t4xczbmv-MDT0000_UUID      172.1G        7.1M      172.0G   0% /fsx[MDT:0]
+    t4xczbmv-OST0000_UUID        1.4T        7.8G        1.4T   1% /fsx[OST:0]
+    t4xczbmv-OST0001_UUID        1.4T        7.8G        1.4T   1% /fsx[OST:1]
+    t4xczbmv-OST0002_UUID        1.4T        7.8G        1.4T   1% /fsx[OST:2]
+    t4xczbmv-OST0003_UUID        1.4T        7.8G        1.4T   1% /fsx[OST:3]
+
+    filesystem_summary:         5.6T       31.3G        5.6T   1% /fsx
+
+=== Participation
+
+We encourage participation; if you find anything, please submit an issue. However, if you want to help raise the bar, **submit a PR**!
