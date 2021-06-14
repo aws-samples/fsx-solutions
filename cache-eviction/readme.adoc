@@ -1,4 +1,4 @@
-= Cache Eviction Solution for Amazon FSx for Lustre 
+= Cache Eviction Solution for Amazon FSx for Lustre
 :icons:
 :linkattrs:
 :imagesdir: resources/images
@@ -20,11 +20,11 @@ This solution helps AWS customers using Amazon FSx for Lustre to automatically m
 
 The Cache Eviction solution for Amazon FSx for Lustre is an AWS CloudFormation template that creates AWS resources to monitor free capacity on your FSx file system. If the file system free capacity drops below the configured threshold (low-water-mark), the solution evicts (releases) space consumed by least recently accessed files on the FSx file system. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents. The contents are read back into the file system on subsequent access.
 
-Amazon FSx for Lustre provides high-performance file systems optimized for fast workload processing. It can support workloads such as machine learning, high performance computing (HPC), video processing, financial modeling, and electronic design automation (EDA). These workloads commonly require data to be presented using a scalable, high-speed file system interface for data access. Many AWS customers store their datasets and build their data lakes on Amazon S3. Since Amazon FSx for Lustre is deeply integrated with S3, customers can create a new FSx for Lustre file system linked to their S3 bucket in minutes. 
+Amazon FSx for Lustre provides high-performance file systems optimized for fast workload processing. It can support workloads such as machine learning, high performance computing (HPC), video processing, financial modeling, and electronic design automation (EDA). These workloads commonly require data to be presented using a scalable, high-speed file system interface for data access. Many AWS customers store their datasets and build their data lakes on Amazon S3. Since Amazon FSx for Lustre is deeply integrated with S3, customers can create a new FSx for Lustre file system linked to their S3 bucket in minutes.
 
-When you create a new ﬁle system linked to S3 data repository,Amazon FSx automatically imports the ﬁle metadata (the name, ownership, timestamp, and permissions) of the objects in your repository. Amazon FSx makes them visible as new ﬁles and directories in the Amazon FSx for Lustre ﬁle system. Amazon FSx transparently copies the content of a file from your repository and loads it into the ﬁle system when your application first accesses the file in FSx. This enables customers to use FSx file system as a fast cache and process data faster using a high-performance, POSIX-complaint, and fully managed file system. 
+When you create a new ﬁle system linked to S3 data repository,Amazon FSx automatically imports the ﬁle metadata (the name, ownership, timestamp, and permissions) of the objects in your repository. Amazon FSx makes them visible as new ﬁles and directories in the Amazon FSx for Lustre ﬁle system. Amazon FSx transparently copies the content of a file from your repository and loads it into the ﬁle system when your application first accesses the file in FSx. This enables customers to use FSx file system as a fast cache and process data faster using a high-performance, POSIX-complaint, and fully managed file system.
 
-The datasets in S3 data repository can span from few hundred TB's to several PB's. All of this data needs to be accessible to the high-performance compute instances through the FSx for Lustre file system. Instead of spinning up a very large FSx for Lustre file system that is equivalent to the size of your dataset in S3, customers can create a smaller file system that is large enough to hold the active working dataset and run their processing jobs. After processing is complete, customers can write results back to the linked S3 data repository using the data repository task API, and release space consumed by files that are no longer needed for active processing. 
+The datasets in S3 data repository can span from few hundred TB's to several PB's. All of this data needs to be accessible to the high-performance compute instances through the FSx for Lustre file system. Instead of spinning up a very large FSx for Lustre file system that is equivalent to the size of your dataset in S3, customers can create a smaller file system that is large enough to hold the active working dataset and run their processing jobs. After processing is complete, customers can write results back to the linked S3 data repository using the data repository task API, and release space consumed by files that are no longer needed for active processing.
 
 
 By deploying a Cache Eviction solution similar to the sample code provided here, customers can automatically manage free capacity on their FSx file system.  When the free capacity threshold is breached, the Cache Eviction Solution evicts files that have not been accessed for N days until the free capacity high-water-mark can be reached. If there are not enough files available to achieve the high-water-mark, all files that have not been accessed for N days will be released and the CloudWatch Alarm will continue to be "In Alarm" state.
@@ -32,7 +32,7 @@ By deploying a Cache Eviction solution similar to the sample code provided here,
 
 === Understanding file access time updates on Lustre
 
-Lustre will update the atime of files lazily as it is not practical to maintain fully coherent atime updates in a high-performance cluster file system.  
+Lustre will update the atime of files lazily as it is not practical to maintain fully coherent atime updates in a high-performance cluster file system.
 
 If the data is read from client cache, no network request is sent to Lustre file servers, as the data is in client cache. To optimize the file system performance, Lustre does not send request to update atime on server if it was not needed. However, if the data was not available in client cache, it will request data from the Lustre file servers and update the atime.  If an inode needs to be updated as is the case with writes, the atime is updated.
 
@@ -43,7 +43,7 @@ The FSx file system should be mounted without the noatime on the clients.
 
 === Environment and architecture
 
-The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notification to a Lambda endpoint which invokes the AWS Lambda function. 
+The Amazon FSx for Lustre Cache Eviction solution is an AWS CloudFormation template that must be launched in the same AWS region as the Amazon FSx for Lustre file system. Please refer to the link:https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/[Region Table] on the AWS Global Infrastructure site to find the AWS regions where Amazon FSx is available. The CloudFormation template creates a stack comprising of Amazon CloudWatch Alarm, Amazon SNS Topic, Amazon CloudWatch LogGroup and AWS Lambda function. The AWS CloudWatch Alarm monitors the free capacity on the file system based on a low-water-mark specified in the CloudFormation stack input. As the free capacity drops below the low-water-mark for a period of 5 minutes the CloudWatch Alarm triggers a Amazon SNS notification to a Lambda endpoint which invokes the AWS Lambda function.
 
 
 The AWS Lambda function performs the following steps and logs status and errors to CloudWatch Logs:
@@ -55,16 +55,16 @@ The AWS Lambda function performs the following steps and logs status and errors 
 	**	Mount the FSx for Lustre file system under /fsx mount path.
 	**	Download the python cache eviction script fsx-cache-eviction.py from the S3 bucket to /tmp on the instance.
 	**	Execute the cache eviction script and log status and errors to /<FSx mount path>/Cache-Eviction-Logs directory.
-**	Invokes the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched. 
+**	Invokes the EC2 API to create a new EC2 instance using this user data script. By default an m5.2xlarge instance type is launched.
 
 
 The cache eviction script executes the following steps on the temporary EC2 instance that is launched:
 
-*	Scans the user input directory path  or root of the FSx file system to identify all files that have not been accessed in N days. 
+*	Scans the user input directory path  or root of the FSx file system to identify all files that have not been accessed in N days.
 *	Validates these least recently accessed files identified in the previous step are in a hsm state suitable for releasing the space. Files in one of these hsm states will be ignored: [" ", "dirty","released","lost","non-release","non-archive"]
 *	Identifies the size and access time of these least recently accessed files.
 *	Determines space used by these least recently accessed files. If total space used by these files:
-		**	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.  
+		**	Is greater than target free capacity to be released (difference of free capacity high-water-mark and low-water mark), only subset of files required to achieve the desired target free capacity are released.
 		**	Is lower than target free capacity, all files are selected for eviction. The script will log a message if there are not enough files available for release.
 *	Initiates a hsm release to release space used by these files.
 *	Terminates the EC2 instance and sends a SNS email notification.
@@ -95,7 +95,7 @@ Below is a list of AWS resources created when the CloudWatch Alarm is triggered.
 
 
 === Prerequisites
-An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template. 
+An Amazon FSx for Lustre file system created with an optional Amazon S3 data repository must exist prior to launching the AWS CloudFormation template.
 
 The file system should be mounted on all compute instances without the *noatime* mount option. A security group for the temporary EC2 instance that allows access to FSx for Lustre file system on port 988.
 
@@ -109,6 +109,8 @@ The CloudFormation template takes the following inputs:
 a| *_Enter_* - *Enter a Name for your stack*
 | *File system id*
 a| *_Enter_* - *Enter your file system id* Ex: fs-01234567900
+| *Mount by*
+a| *_Select_* - *Select how the cache eviction process will mount the file system, using DNS name or IP address* Ex: DNSName
 | *Directory path under root of FSx file system*
 a| *_Enter_* - *<Subdirectory path under the FSx file system root. Leave blank if you need to scan entire file system>*
 | *Low-water-mark to start FSx Cache eviction*
@@ -118,7 +120,7 @@ a| *_Enter_* - *<size in bytes>* Ex: 3000000000000 (for 3.0 TB)
 | *Minimum age for least recently accessed files*
 a| *_Enter_* - *<minimum age of least recently accessed files to be evicted in days>* Ex: 1  (to evict files not accessed for more than 1 day)
 | *Email address*
-a| *_Enter_* - *<your email address to receive SNS notification>* 
+a| *_Enter_* - *<your email address to receive SNS notification>*
 | *EC2 key pair*
 a| *_Select_* - *<Select your EC2 Keypair to be used for launching the temporary EC2 instance>*
 | *EC2 Instance security group id*
@@ -135,52 +137,67 @@ To launch the CloudFormation stack, click on the link below for the source AWS r
 |===
 |Region | Launch template with a new VPC
 | *N. Virginia* (us-east-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *Ohio* (us-east-2)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *N. California* (us-west-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *Oregon* (us-west-2)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
-| *Canada* (ca-central-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ca-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Frankfurt* (eu-central-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Ireland* (eu-west-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *London* (eu-west-2)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Paris* (eu-west-3)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-3#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Stockholm* (eu-north-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Mumbai* (ap-south-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Singapore* (ap-southeast-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Sydney* (ap-southeast-2)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Tokyo* (ap-northeast-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
-
-| *Seoul* (ap-northeast-2)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+| *Africa (Cape Town)* (af-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=af-south-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 
 | *Hong Kong* (ap-east-1)
-a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-east-1#/stacks/new?templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-east-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Mumbai* (ap-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Seoul* (ap-northeast-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Singapore* (ap-southeast-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Sydney* (ap-southeast-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Tokyo* (ap-northeast-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Canada* (ca-central-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=ca-central-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Frankfurt* (eu-central-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Ireland* (eu-west-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *London* (eu-west-2)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-2#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Milan* (eu-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-south-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Paris* (eu-west-3)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-west-3#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Stockholm* (eu-north-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Stockholm* (eu-north-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *Middle East (Bahrain)* (me-south-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=me-south-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
+
+| *São Paulo* (sa-east-1)
+a| image::deploy-to-aws.png[link=https://console.aws.amazon.com/cloudformation/home?region=sa-east-1#/stacks/new?stackName=fsx-lustre-cache-eviction&templateURL=https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.yaml]
 |===
 
 
@@ -194,16 +211,16 @@ link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-e
 
 The Lambda function deployment package.
 
-link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict-1620172800.zip[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-evict.zip]
 
 The python script that runs on a temporary EC2 instance.
 
-link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
+link:https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction-1620172800.py[https://solution-references.s3.amazonaws.com/fsx/cache-eviction/fsx-cache-eviction.py]
 
 
 === Managing the Solution
 
-Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts. 
+Once the CloudFormation Stack is successfully deployed, you will need to confirm subscription to Amazon SNS to receive email alerts.
 
 You should see the following resources in your AWS management console. These resources will include the CloudFormation Stack Name in the resource names:
 
@@ -276,7 +293,7 @@ This solution covers managing the Cache Eviction process based on free capacity 
 Some key considerations:
 
 •	Customers deploying the solution should POC this solution for their requirements.
-•	Test and validate the time taken by the Cache Eviction Process for very large file systems with millions of files. Consider running multiple Cache Eviction tasks at a sub directory level vs the entire file system. 
+•	Test and validate the time taken by the Cache Eviction Process for very large file systems with millions of files. Consider running multiple Cache Eviction tasks at a sub directory level vs the entire file system.
 •	Consider using a larger instance type for large file systems with large amount of data. By default this solution uses m5.2xlarge.
 
 
