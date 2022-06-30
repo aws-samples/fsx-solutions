@@ -60,7 +60,7 @@ optional arguments:
 ----
 
 Start the cache eviction process by executing the script as shown below. In the example shown below the script will evict files that have not been accessed for more than 15 days and from the directory or mountpath /fsx.   You can specify subdirectories under the mountpath to target specific directories:
-+
+
 [source,bash]
 ----
 ./cache-evict.py -minage 15 -mountpath /fsx
