@@ -1,0 +1,83 @@
+= Cache Eviction Solution for Amazon FSx for Lustre ( release V2)
+:icons:
+:linkattrs:
+:imagesdir: resources/images
+
+
+© 2020 Amazon Web Services, Inc. and its affiliates. All rights reserved.
+This sample code is made available under the MIT-0 license. See the LICENSE file.
+
+Errors or corrections? Contact kurdekar@amazon.com
+
+:toc-title: Table of Contents
+:toclevels: 3
+:toc:
+
+
+=== Overview
+
+This solution allows AWS customers using Amazon FSx for Lustre to automatically manage free capacity on the file system and save on storage costs.
+
+=== Understanding file access time updates on Lustre
+
+Lustre will update the atime of files lazily as it is not practical to maintain fully coherent atime updates in a high-performance cluster file system.
+
+If the data is read from client cache, no network request is sent to Lustre file servers, as the data is in client cache. To optimize the file system performance, Lustre does not send request to update atime on server if it was not needed. However, if the data was not available in client cache, it will request data from the Lustre file servers and update the atime.  If an inode needs to be updated as is the case with writes, the atime is updated.
+
+*Note*: This is a very important behavior to take into consideration while deploying the Cache Eviction Solution. As atime updates are lazy, the Cache Eviction solution may not have the most recent atime for files that have been cached locally on clients. This can lead to some recently accessed files getting evicted FSx. Releasing a file retains the file listing and metadata, but removes the local copy of that file's contents. The contents are read back into the file system on subsequent access.
+
+The FSx file system should be mounted without the noatime on the clients.
+
+
+=== Environment and architecture
+
+The Amazon FSx for Lustre Cache Eviction solution is based on python multiprocessing Queue and Processes, and must be run from a EC2 instance mounting the Amazon FSx for Lustre file system. 
+
+
+image::cache-eviction-v2.jpeg[align="left", width=600]
+
+=== How to use the script?
+
+Download the script to an EC2 instance that has FSx for Lustre file system mounted without the “noatime” mount option.  To view supported parameters run:
++
+[source,bash]
+----
+./cache-evict.py --help
+
+usage: cache-evict.py [-h] -mountpath MOUNTPATH -minage MINAGE
+
+Cache Eviction script to release least recently accessed files when FSx for
+Lustre file system free capacity Alarm is triggered
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -mountpath MOUNTPATH  Please specify the FSx for Lustre file system mount
+                        path
+  -minage MINAGE        Please specify number of days since last access. Files
+                        not accessed for more than this number of days will be
+                        considered for hsm release
+
+----
++
+Start the cache eviction process by executing the script as shown below. In the example shown below the script will evict files that have not been accessed for more than 15 days and from the directory or mountpath /fsx.   You can specify subdirectories under the mountpath to target specific directories:
++
+[source,bash]
+----
+./cache-evict.py -minage 15 -mountpath /fsx
+
+----
++
+=== Logging
+Logs are written to /home/ec2-user/cache-eviction.logX and files are rotated with following parameters( 100 MB per log, maximum of 10 logs). Ensure your log destination has atleast 1GB capacity to write the logs if you are working on a large file system with millions of files. 
+
+
+The script logs every step in the workflow (files added to each queue, files processed or ignored, errors etc.) You can disable INFO log messages if you want to disable  detailed logging.
+
+
+=== Instance and parallel threads
+
+An EC2 instance with 8 vCPUs is recommended. Use larger instance types with more CPU cores to create more parallel processes if working with very large file systems. Adjust the number of parallel processes created in the script if required.
+
+=== Participation
+
+We encourage participation; if you find anything, please submit an issue. However, if you want to help raise the bar, **submit a PR**!
