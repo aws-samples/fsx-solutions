@@ -58,7 +58,7 @@ optional arguments:
                         considered for hsm release
 
 ----
-+
+
 Start the cache eviction process by executing the script as shown below. In the example shown below the script will evict files that have not been accessed for more than 15 days and from the directory or mountpath /fsx.   You can specify subdirectories under the mountpath to target specific directories:
 +
 [source,bash]
@@ -66,7 +66,7 @@ Start the cache eviction process by executing the script as shown below. In the 
 ./cache-evict.py -minage 15 -mountpath /fsx
 
 ----
-+
+
 === Logging
 Logs are written to /home/ec2-user/cache-eviction.logX and files are rotated with following parameters( 100 MB per log, maximum of 10 logs). Ensure your log destination has atleast 1GB capacity to write the logs if you are working on a large file system with millions of files. 
 
