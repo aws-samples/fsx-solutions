@@ -38,7 +38,14 @@ image::cache-eviction-v2.jpeg[align="left", width=600]
 
 === How to use the script?
 
-Download the script to an EC2 instance that has FSx for Lustre file system mounted without the “noatime” mount option.  To view supported parameters run:
+Download the script to an EC2 instance that has FSx for Lustre file system mounted without the “noatime” mount option.  
+
+[source,bash]
+----
+wget -O cache-evict.py https://raw.githubusercontent.com/aws-samples/fsx-solutions/master/cache-eviction/v2/cache-evict.py
+----
+
+To view supported parameters run:
 
 [source,bash]
 ----
